@@ -61,6 +61,47 @@ class WebsitesController < ApplicationController
     end
   end
 
+  def fetchSingleWebsite(base_url)
+    # fetches page
+    require 'open-uri'
+    page = Nokogiri::HTML(open(base_url))
+
+    if page != nil
+      newWebsite = Website.new(:url => base_url)
+      newWebsite.save
+
+      hrefs = page.css('a').map { |link| link.attribute('href').value }
+
+      tokens = page.css('div').text.split
+
+      tokens.each do |token|
+        newToken = Token.new(:value => token)
+        newToken.save
+
+        newEdge = Edge.new()
+        newEdge.token = Token.find_by_value(token)
+        newEdge.website = Website.find_by_url(base_url)
+
+        if newEdge.save
+
+        else
+          toModifyEdge = Edge.where(:token => newEdge.token, :website => newEdge.website).first
+          toModifyEdge.quantity += 1
+        end
+      end
+
+      hrefs.each do |href|
+        if Website.where(:url => href).count == 0
+          if href.include?('http')
+            puts "Crawling for: " + href 
+            fetchSingleWebsite(href)
+          end
+        end
+      end
+    end
+
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_website

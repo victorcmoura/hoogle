@@ -13,6 +13,7 @@
 ActiveRecord::Schema.define(version: 20171228214842) do
 
   create_table "edges", force: :cascade do |t|
+    t.integer "quantity", default: 1
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "website_id"
