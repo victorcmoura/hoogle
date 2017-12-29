@@ -63,7 +63,7 @@ class WebsitesController < ApplicationController
   end
 
   def fetchSingleWebsite(base_url)
-    if Website.all.count > 20
+    if Website.all.count > 100
       return
     end
     # fetches page
