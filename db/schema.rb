@@ -12,12 +12,15 @@
 
 ActiveRecord::Schema.define(version: 20171228214842) do
 
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
   create_table "edges", force: :cascade do |t|
     t.integer "quantity", default: 1
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "website_id"
-    t.integer "token_id"
+    t.bigint "website_id"
+    t.bigint "token_id"
     t.index ["token_id"], name: "index_edges_on_token_id"
     t.index ["website_id"], name: "index_edges_on_website_id"
   end
@@ -34,4 +37,6 @@ ActiveRecord::Schema.define(version: 20171228214842) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "edges", "tokens"
+  add_foreign_key "edges", "websites"
 end
