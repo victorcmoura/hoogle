@@ -4,7 +4,7 @@ class EdgesController < ApplicationController
   # GET /edges
   # GET /edges.json
   def index
-    @edges = Edge.all
+    @edges = Edge.all.order(:quantity)
   end
 
   # GET /edges/1
@@ -61,6 +61,38 @@ class EdgesController < ApplicationController
     end
   end
 
+  def search
+
+    @tokens = edge_params['q'].split
+
+    @searchedToken = []
+
+    @tokens.each do |searchedWord|
+      Token.where("value like?", "%#{searchedWord.downcase}%").each do |token|
+        @searchedToken.push(token)
+      end
+    end
+
+    @results = Edge.where(:token => @searchedToken).order(quantity: :desc)
+
+    @tempResultWebsites = @results.map do |result|
+      if result.website != nil
+        result.website.url
+      else
+        nil
+      end
+    end.uniq
+
+    @resultWebsites = []
+
+    @tempResultWebsites.each do |website|
+      if website != nil
+        @resultWebsites.push(website)
+      end
+    end
+
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_edge
@@ -70,5 +102,6 @@ class EdgesController < ApplicationController
     # Never trust parameters from the scary internet, only allow the white list through.
     def edge_params
       params.fetch(:edge, {})
+      params.permit(:q, :utf8, :commit)
     end
 end

@@ -1,0 +1,8 @@
+<h1>Hoogle Search Result</h1>
+<tbody>
+  <ul>
+    <% @resultWebsites.each do |result| %>
+      <li><%= link_to result, result %></li>
+    <% end %>
+  </ul>
+</tbody>

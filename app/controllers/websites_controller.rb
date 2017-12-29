@@ -30,6 +30,7 @@ class WebsitesController < ApplicationController
       if @website.save
         format.html { redirect_to @website, notice: 'Website was successfully created.' }
         format.json { render :show, status: :created, location: @website }
+        fetchSingleWebsite(@website.url)
       else
         format.html { render :new }
         format.json { render json: @website.errors, status: :unprocessable_entity }
@@ -62,44 +63,68 @@ class WebsitesController < ApplicationController
   end
 
   def fetchSingleWebsite(base_url)
+    if Website.all.count > 20
+      return
+    end
     # fetches page
     require 'open-uri'
-    page = Nokogiri::HTML(open(base_url))
+
+    begin
+      page = Nokogiri::HTML(open(base_url))
+    rescue
+      return
+    end
 
     if page != nil
-      newWebsite = Website.new(:url => base_url)
-      newWebsite.save
+      @website = Website.create(:url => base_url)
 
-      hrefs = page.css('a').map { |link| link.attribute('href').value }
+      temp_hrefs = page.css('a').map { |link| link.attribute('href') }
+      hrefs = []
+      temp_hrefs.each do |link|
+        if link != nil
+          hrefs.push(link.value)
+        end
+      end
 
       tokens = page.css('div').text.split
+      tokens = tokens.select {|token| token.length >= 3 and token.length <= 10}
+      tokens  = tokens.map { |token| token.downcase }
 
       tokens.each do |token|
-        newToken = Token.new(:value => token)
-        newToken.save
+        @token = Token.find_by_value(token)
 
-        newEdge = Edge.new()
-        newEdge.token = Token.find_by_value(token)
-        newEdge.website = Website.find_by_url(base_url)
-
-        if newEdge.save
+        if @token != nil
 
         else
-          toModifyEdge = Edge.where(:token => newEdge.token, :website => newEdge.website).first
-          toModifyEdge.quantity += 1
+          @token = Token.create(:value => token)
+        end
+
+        newEdge = Edge.new()
+        newEdge.token = @token
+        newEdge.website = @website
+        newEdge.save
+
+        if newEdge.errors.full_messages.count != 0
+          toModifyEdge = Edge.where(:token => @token, :website => @website).first
+          if toModifyEdge != nil
+            toModifyEdge.quantity += 1
+            toModifyEdge.save
+          end
         end
       end
 
       hrefs.each do |href|
         if Website.where(:url => href).count == 0
           if href.include?('http')
-            puts "Crawling for: " + href 
+            puts "Crawling for: " + href
             fetchSingleWebsite(href)
           end
         end
       end
     end
+  end
 
+  def homepage
   end
 
   private
